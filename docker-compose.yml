@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # --- 1. SERVICE MATA KULIAH & KRS (Galih - Port Laptop: 8002) ---
+  krs-service:
+    build:
+      context: ./102022400068_krs-service
+      dockerfile: Dockerfile
+    container_name: krs_service_app
+    restart: unless-stopped
+    ports:
+      - "8002:8000"
+    volumes:
+      - ./102022400068_krs-service:/var/www
+      - /var/www/vendor
+    environment:
+      - APP_ENV=local
+      - DB_CONNECTION=sqlite
+      - MAHASISWA_SERVICE_URL=http://mahasiswa-service/api
+      - NILAI_SERVICE_URL=http://nilai-service/api
+    command: >
+      sh -c "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
+    networks:
+      - tubes-network
+
+  # --- 2. SERVICE DATA MAHASISWA (Hans - Port Laptop: 8001) ---
+  # Silakan Hans ganti folder context ke nama folder Anda jika sudah di-push
+  mahasiswa-service:
+    # build:
+    #   context: ./1020224xxxxx_student-service
+    #   dockerfile: Dockerfile
+    image: alpine # temporary placeholder until folder exists
+    container_name: mahasiswa_service_app
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    networks:
+      - tubes-network
+
+  # --- 3. SERVICE NILAI & KURIKULUM (Manhal - Port Laptop: 8003) ---
+  # Silakan Manhal ganti folder context ke nama folder Anda jika sudah di-push
+  nilai-service:
+    # build:
+    #   context: ./1020224xxxxx_grades-service
+    #   dockerfile: Dockerfile
+    image: alpine # temporary placeholder until folder exists
+    container_name: nilai_service_app
+    restart: unless-stopped
+    ports:
+      - "8003:8000"
+    networks:
+      - tubes-network
+
+networks:
+  tubes-network:
+    driver: bridge
