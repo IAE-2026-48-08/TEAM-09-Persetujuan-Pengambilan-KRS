@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # =========================================================================
+  # 1. API GATEWAY (Port: 8000)
+  # =========================================================================
+  api-gateway:
+    image: nginx:alpine
+    container_name: api_gateway
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    # volumes:
+    #   - ./api-gateway/nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - tubes_iae_network
+
+  # =========================================================================
+  # 2. SERVICE DATA MAHASISWA - HANS (Port: 8001)
+  # =========================================================================
+  # mahasiswa-service:
+  #   ...
+
+  # =========================================================================
+  # 3. SERVICE MATA KULIAH & KRS - GALIH (Port: 8002)
+  # =========================================================================
+  # krs-service:
+  #   ...
+
+  # =========================================================================
+  # 4. SERVICE NILAI & KURIKULUM - MANHAL (Port: 8003)
+  # =========================================================================
+  nilai-service:
+    build:
+      context: ./102022400285_grades-service
+      target: runtime
+    container_name: nilai_service_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./102022400285_grades-service:/var/www/html
+      - ./102022400285_grades-service/vendor
+    environment:
+      APP_ENV: local
+      APP_DEBUG: 'true'
+      DB_CONNECTION: mysql
+      DB_HOST: nilai-db
+      DB_PORT: 3306
+      DB_DATABASE: 102022400285_nilai_dan_kurikulum
+      DB_USERNAME: laravel_user
+      DB_PASSWORD: laravel_password
+    depends_on:
+      - nilai-db
+    networks:
+      - tubes_iae_network
+
+  nilai-web:
+    image: nginx:alpine
+    container_name: nilai_service_web
+    restart: unless-stopped
+    ports:
+      - "8003:80"
+    volumes:
+      - ./102022400285_grades-service:/var/www/html
+      - ./102022400285_grades-service/.docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - nilai-service
+    networks:
+      - tubes_iae_network
+
+  nilai-db:
+    image: mysql:8.0
+    container_name: nilai_service_db
+    restart: unless-stopped
+    ports:
+      - "33063:3306"
+    environment:
+      MYSQL_DATABASE: 102022400285_nilai_dan_kurikulum
+      MYSQL_USER: laravel_user
+      MYSQL_PASSWORD: laravel_password
+      MYSQL_ROOT_PASSWORD: root_password
+    volumes:
+      - nilai_service_db_data:/var/lib/mysql
+    networks:
+      - tubes_iae_network
+
+volumes:
+  nilai_service_db_data:
+    driver: local
+
+networks:
+  tubes_iae_network:
+    driver: bridge
