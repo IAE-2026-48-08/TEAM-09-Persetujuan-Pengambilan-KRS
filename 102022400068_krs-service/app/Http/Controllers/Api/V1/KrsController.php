@@ -373,11 +373,16 @@ class KrsController extends Controller
                 throw new \Exception("Mahasiswa dengan NIM {$request->student_id} tidak aktif (Status: {$statusMahasiswa}).");
             }
 
+            $course = Course::findOrFail($request->course_id);
+
             // 2. Hubungi Service Nilai & Kurikulum (Manhal) untuk inisialisasi record nilai baru
             $nilaiUrl = rtrim(config('services.nilai.url'), '/') . '/v1/grades/initialize';
-            $gradesResponse = Http::post($nilaiUrl, [
-                'student_id' => $request->student_id,
-                'course_id' => (int) $request->course_id
+            $gradesResponse = Http::withHeaders([
+                'X-IAE-KEY' => 'KEY-MHS-310',
+                'Accept' => 'application/json'
+            ])->post($nilaiUrl, [
+                'student_id' => (string) $request->student_id,
+                'course_code' => (string) $course->code
             ]);
 
             if (!$gradesResponse->successful() && $gradesResponse->status() !== 201) {
