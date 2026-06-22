@@ -28,9 +28,10 @@ class IaeIntegrationService
                  <LogContent><![CDATA[' . json_encode($transactionData) . ']]></LogContent>
               </AuditRequest>
            </soapenv:Body>
-        </soapenv:Envelope>';
+         </soapenv:Envelope>';
 
         $response = Http::withToken($token)
+            ->timeout(5) // Batasan waktu 5 detik agar transaksi database tidak terblokir lama jika server SOAP down/lambat
             ->withHeaders(['Content-Type' => 'text/xml; charset=UTF8'])
             ->send('POST', $this->baseUrl . '/soap/v1/audit', [
                 'body' => $xmlBody
@@ -49,6 +50,7 @@ class IaeIntegrationService
     {
         try {
             $response = Http::withToken($token)
+                ->timeout(5) // Batasan waktu 5 detik untuk publish event
                 ->post($this->baseUrl . '/api/v1/messages/publish', [
                     'exchange' => 'iae.central.exchange',
                     'routing_key' => 'krs.submitted.event',
@@ -65,4 +67,18 @@ class IaeIntegrationService
             return false;
         }
     }
+
+    /**
+     * Mengambil token M2M dari SSO Pusat dosen.
+     */
+    protected function getM2MToken()
+    {
+        $response = Http::post('https://iae-sso.virtualfri.id/api/v1/auth/token', [
+            'api_key' => env('IAE_API_KEY', 'KEY-MHS-156'),
+            'nim'     => '102022400068'
+        ]);
+
+        return $response->json()['token'] ?? null;
+    }
 }
+
