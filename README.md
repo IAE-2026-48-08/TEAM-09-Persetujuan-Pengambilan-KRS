@@ -1,4 +1,4 @@
-# Monorepo TEAM-09: Sistem KRS Terpadu MVP
+# Monorepo TEAM-09: Persetujuan-Pengambilan-KRS
 
 Repositori ini menyatukan 3 microservices yang berkolaborasi dalam proses bisnis persetujuan dan pengambilan rencana studi mahasiswa (KRS).
 
@@ -7,9 +7,12 @@ Repositori ini menyatukan 3 microservices yang berkolaborasi dalam proses bisnis
 ```text
 TUBES-IAE_TEAM-09/
 ├── 102022400068_krs-service/          ← Service Mata Kuliah & KRS (Galih Hirpana)
-├── 1020224xxxxx_student-service/      ← Service Data Mahasiswa (Hans) [Placeholder]
-├── 102022400285_grades-service/       ← Service Nilai & Kurikulum (Manhal)
+├── 102022400280_Data_Mahasiswa_Service/ ← Service Data Mahasiswa (D Hans Dhika Slamet)
+├── 102022400285_grades-service/       ← Service Nilai & Kurikulum (Muhammad Manhal Syarifudin)
+├── api-gateway/                       ← Konfigurasi Nginx API Gateway (Reverse Proxy)
 ├── docker-compose.yml                 ← Konfigurasi orchestration Docker Compose
+├── LOG_PROMPTING.md                   ← Log Prompting Integrasi Monorepo
+├── RESUME_KONTRIBUSI.md               ← Resume kontribusi pengerjaan kelompok & individu
 └── README.md                          ← Dokumen panduan utama ini
 ```
 
