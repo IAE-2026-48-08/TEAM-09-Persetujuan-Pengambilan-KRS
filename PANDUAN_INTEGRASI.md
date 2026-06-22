@@ -59,86 +59,112 @@ Salin berkas-berkas berikut dari folder proyek mandiri Anda (`102022400285_nilai
 
 ## 3. Penyesuaian Konfigurasi Port & Environment
 
-Di dalam monorepo kelompok, beberapa service akan dijalankan secara bersamaan. Oleh karena itu, konflik port harus dihindari.
+Di dalam monorepo kelompok, beberapa service akan dijalankan secara bersamaan. Untuk mematuhi aturan keamanan ("Zero External Ports for Backend Services"), seluruh backend service terisolasi dari dunia luar dan tidak mengekspos port ke laptop. Akses dari luar hanya diijinkan melalui Nginx API Gateway di port **`8000`**.
 
-### A. Pengaturan Port di `.env` & `docker-compose.yml`
-Sesuai dengan blueprint MVP, service Anda akan berjalan di **Port Laptop 8003** dengan nama service Docker **`nilai-service`**.
+### A. Pengaturan Port & Host URL
+Seluruh service backend diakses secara eksternal melalui host **`http://localhost:8000`** (Nginx API Gateway).
 
 Di file **`.env`** lokal Anda (`TUBES-IAE_TEAM-09/102022400285_grades-service/.env`):
 ```env
-APP_URL=http://localhost:8003
+APP_URL=http://localhost:8000
 L5_SWAGGER_USE_ABSOLUTE_PATH=false
 L5_SWAGGER_UI_PERSIST_AUTHORIZATION=true
 ```
 
 Di file **`app/Http/Controllers/Controller.php`** Anda:
 ```php
-#[OA\Server(url: "http://localhost:8003", description: "Local API Server")]
+#[OA\Server(url: "http://localhost:8000", description: "Local API Server through API Gateway")]
 ```
 
 ### B. Pengaturan Komunikasi Antar-Service di Docker
-Jika service Anda nantinya perlu melakukan request HTTP GET/POST ke service lain, gunakan URL nama service Docker mereka di dalam file `.env`:
+Gunakan URL nama service Docker internal mereka (di dalam jaringan `team09_network`) pada file `.env` krs-service:
 ```env
-MAHASISWA_SERVICE_URL=http://mahasiswa-service/api
-KRS_SERVICE_URL=http://krs-service/api
-NILAI_SERVICE_URL=http://nilai-service/api
+MAHASISWA_SERVICE_URL=http://student-service:8000
+NILAI_SERVICE_URL=http://grades-service:8000
 ```
 
 ---
 
 ## 4. Struktur Integrasi Docker-Compose Monorepo
 
-Tambahkan konfigurasi container Anda ke dalam file **`docker-compose.yml` utama di root monorepo** (`TUBES-IAE_TEAM-09/docker-compose.yml`).
+Tambahkan konfigurasi container Anda ke dalam file **`docker-compose.yml` utama di root monorepo** (`TUBES-IAE_TEAM-09/docker-compose.yml`). Sesuai dengan audit keamanan DevSecOps, tidak ada pemetaan ports: ke mesin host (laptop) untuk backend service.
 
-Berikut contoh integrasi service Anda (dengan nama service `nilai-service` di port `8003`):
+Berikut potongan konfigurasi real untuk service Anda di dalam file `docker-compose.yml`:
 
 ```yaml
 services:
-  # --- SERVICE DATA MAHASISWA (HANS) ---
-  mahasiswa-service:
-    # ... konfigurasi service mahasiswa
-
-  # --- SERVICE MATA KULIAH & KRS (GALIH) ---
-  krs-service:
-    # ... konfigurasi service krs
-
   # --- SERVICE NILAI & KURIKULUM (MANHAL) ---
-  nilai-service:
+  grades-service-db:
+    image: mysql:8.0
+    container_name: grades_service_db
+    restart: unless-stopped
+    ports:
+      - "33069:3306"
+    environment:
+      MYSQL_DATABASE: 102022400285_nilai_dan_kurikulum
+      MYSQL_USER: laravel_user
+      MYSQL_PASSWORD: laravel_password
+      MYSQL_ROOT_PASSWORD: root_password
+    networks:
+      - team09_network
+
+  grades-service-redis:
+    image: redis:alpine
+    container_name: grades_service_redis
+    restart: unless-stopped
+    ports:
+      - "6389:6379"
+    networks:
+      - team09_network
+
+  grades-service-app:
     build:
       context: ./102022400285_grades-service
       target: runtime
-    container_name: nilai_service_app
+    image: grades_service_runtime:latest
+    container_name: grades_service_app
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
       - ./102022400285_grades-service:/var/www/html
+      - /var/www/html/vendor
+    environment:
+      APP_ENV: local
+      DB_CONNECTION: mysql
+      DB_HOST: grades-service-db
+      DB_PORT: 3306
+      DB_DATABASE: 102022400285_nilai_dan_kurikulum
+      DB_USERNAME: laravel_user
+      DB_PASSWORD: laravel_password
+      REDIS_HOST: grades-service-redis
+      QUEUE_CONNECTION: database
+      CACHE_STORE: database
+      SESSION_DRIVER: database
     networks:
-      - tubes_iae_network
+      team09_network:
+        aliases:
+          - app
 
-  nilai-web:
+  grades-service:
     image: nginx:alpine
-    container_name: nilai_service_web
+    container_name: grades_service_web
     restart: unless-stopped
-    ports:
-      - "8003:80" # Diakses oleh Host di port 8003
     volumes:
       - ./102022400285_grades-service:/var/www/html
       - ./102022400285_grades-service/.docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
-      - nilai-service
+      - grades-service-app
     networks:
-      - tubes_iae_network
-
-networks:
-  tubes_iae_network:
-    driver: bridge
+      team09_network:
+        aliases:
+          - grades-service
 ```
 
 ---
 
 ## 5. Integrasi Endpoint & Payload Request (MVP Blueprint)
 
-Service Anda menyediakan 3 endpoint yang wajib berjalan di port `8003` dengan validasi header keamanan `X-IAE-KEY: KEY-MHS-310`:
+Service Anda menyediakan 3 endpoint yang wajib berjalan di port **`8000` (melalui API Gateway)** dengan validasi header keamanan `X-IAE-KEY: KEY-MHS-310`:
 
 ### A. GET `/api/v1/curriculums`
 *   *Deskripsi:* Menampilkan daftar aturan prasyarat kurikulum program studi.

@@ -83,4 +83,4 @@ Memperbarui kontrak API dengan menyuntikkan payload `nim` pada request JWT ke IA
 |---|---|---|
 | manhalsyarif | 9 | Grades Service, SOAP Audit, Dokumentasi |
 | hansdhika11-dpk | 1 | Data Mahasiswa Service, Endpoint Master Mahasiswa, API Security |
-| binjal1410 | 2 | KRS Service (DB Transaction/Locking), Nginx/Laravel API Gateway, Docker Compose, SSO JWT, SOAP XML Audit, RabbitMQ Integration |
+| binjal1410 | 12 | KRS Service (DB Transaction/Locking), Nginx/Laravel API Gateway, Docker Compose, SSO JWT, SOAP XML Audit, RabbitMQ Integration |

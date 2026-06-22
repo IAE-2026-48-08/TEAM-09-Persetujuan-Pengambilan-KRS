@@ -27,9 +27,9 @@ Dalam arsitektur microservices ini, seluruh request eksternal (Postman, Frontend
 | Service Name Docker | Host Port (Laptop) | Container Port | Developer | Fungsi Utama |
 | :--- | :--- | :--- | :--- | :--- |
 | `api-gateway` | `8000` | `80` | Team-09 | Pintu masuk utama & proxy reverse router |
-| `krs-service` | `8001` | `8000` | Galih Hirpana | Mengelola mata kuliah & submit draft KRS |
-| `student-service` | `8002` | `8000` | D Hans Dhika Slamet | Mengelola data profil & keaktifan mahasiswa |
-| `grades-service` | `8003` | `8000` | M. Manhal Syarifudin | Mengelola prasyarat nilai & kurikulum |
+| `krs-service` | *Terisolasi (No Bypass)* | `8000` | Galih Hirpana | Mengelola mata kuliah & submit draft KRS |
+| `student-service` | *Terisolasi (No Bypass)* | `8000` | D Hans Dhika Slamet | Mengelola data profil & keaktifan mahasiswa |
+| `grades-service` | *Terisolasi (No Bypass)* | `80` | M. Manhal Syarifudin | Mengelola prasyarat nilai & kurikulum |
 
 ---
 
@@ -109,9 +109,9 @@ sequenceDiagram
     autonumber
     actor Client
     participant Gateway as Nginx API Gateway (Port 8000)
-    participant Student as student-service (Port 8002)
-    participant KRS as krs-service (Port 8000)
-    participant Grades as grades-service (Port 8003)
+    participant Student as student-service (Internal Port 8000)
+    participant KRS as krs-service (Internal Port 8000)
+    participant Grades as grades-service (Internal Port 80)
     participant SSO as Cloud SSO & AMQP Proxy (External)
 
     Client->>Gateway: [GET] /api/v1/students/102022400068
