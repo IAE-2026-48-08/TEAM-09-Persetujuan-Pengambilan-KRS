@@ -54,26 +54,33 @@ Memastikan ketersediaan resource mahasiswa agar dapat dikonsumsi (*lookup*) deng
 ---
 
 ## 3. Galih Hirpana
-**GitHub:** binjal1410 | **NIM:** 102022400068
+GitHub: binjal1410 | NIM: 102022400068
 
-Berfokus pada pengembangan **Mata Kuliah & KRS Service** (`krs-service`), pengaturan orkestrasi Docker Compose monorepo, serta konfigurasi API Gateway.
+Berfokus pada pembuatan Mata Kuliah & KRS Service (krs-service), setup Docker Compose untuk kelompok, dan konfigurasi Nginx API Gateway.
 
-### Infrastruktur & API Gateway
-Menyusun `docker-compose.yml` utama di root folder, serta menyediakan konfigurasi routing hub melalui API Gateway (baik Nginx maupun gateway berbasis Laravel) untuk menyatukan routing port seluruh service terisolasi di bawah port 8000.
+Setup Docker & API Gateway
+Membuat file docker-compose.yml untuk menggabungkan service milik semua anggota kelompok.
 
-### Integrasi Event-Driven (RabbitMQ)
-Mengonfigurasi dan mengintegrasikan broker pesan untuk komunikasi asynchronous. Mengimplementasikan pola REST-to-AMQP Gateway (`Http::post` ke REST Proxy) untuk menyiarkan event transaksi secara aman ke exchange RabbitMQ pusat.
+Mengonfigurasi Nginx sebagai API Gateway agar semua service (Mahasiswa, KRS, Grades) bisa diakses lewat satu pintu di port 8000.
 
-### Pengembangan Core KRS Service
-Mengembangkan `102022400068_krs-service` menggunakan Laravel dan SQLite. Membuat endpoint `GET /v1/courses`, `GET /v1/krs/{student_id}`, dan `POST /v1/krs/submit`.
+Fitur Utama KRS Service
+Membangun krs-service menggunakan framework Laravel dengan database lokal SQLite.
 
-### Integritas Database (Pessimistic Locking)
-Mengamankan state pendaftaran dengan membungkus proses insert KRS di dalam `DB::beginTransaction()` dan mengunci kuota kursi mata kuliah secara real-time menggunakan mekanisme `lockForUpdate()` untuk mencegah race condition.
+Membuat endpoint utama untuk proses pendaftaran: GET /v1/courses, GET /v1/krs/{student_id}, dan POST /v1/krs/submit.
 
-### Integrasi SSO M2M & Legacy SOAP
-Memperbarui kontrak API dengan menyuntikkan payload `nim` pada request JWT ke IAE SSO, serta mendesain XML CDATA Envelope untuk mencatatkan resi validasi pendaftaran KRS ke Legacy SOAP Audit pusat secara otomatis.
+Keamanan Transaksi Database
+Mencegah error kuota (bentrok data) saat mahasiswa mendaftar bersamaan dengan memakai DB::beginTransaction().
 
-> **Ringkasan kontribusi:** Bertanggung jawab atas orkestrasi Docker monorepo, routing API Gateway, pengembangan core logic KRS Service dengan Pessimistic Locking, serta integrasi penuh Tritunggal pusat (SSO JWT, SOAP Audit, dan REST Proxy RabbitMQ).
+Menggunakan fitur lockForUpdate() untuk mengunci baris data mata kuliah sementara waktu sampai transaksi selesai.
+
+Integrasi Sistem Pusat (SSO, SOAP, RabbitMQ)
+Menambahkan parameter nim saat request Token JWT M2M ke SSO Dosen agar otorisasi berhasil.
+
+Membungkus data JSON ke dalam format XML Envelope untuk dikirim sebagai log ke server Legacy SOAP.
+
+Mengirimkan notifikasi event pendaftaran secara asinkron ke RabbitMQ pusat menggunakan HTTP Request biasa.
+
+Ringkasan kontribusi: Bertanggung jawab atas setup Docker dan Nginx Gateway kelompok, membuat fitur pendaftaran KRS yang aman dari bentrok kuota, serta menghubungkan KRS lokal dengan ketiga sistem pusat dosen (SSO, SOAP, dan RabbitMQ).
 
 ---
 
