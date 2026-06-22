@@ -27,14 +27,6 @@ class StudentSeeder extends Seeder
                 'id' => '102022400002',
                 'name' => 'Siti Aminah',
             ],
-            [
-                'id' => '102022400280',
-                'name' => 'Hans Dhika Slamet',
-            ],
-            [
-                'id' => '102022400285',
-                'name' => 'Muhammad Manhal Syarifudin',
-            ],
         ];
 
         foreach ($students as $student) {

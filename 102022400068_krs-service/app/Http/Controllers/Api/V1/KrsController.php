@@ -8,7 +8,6 @@ use App\Models\Course;
 use App\Models\KrsItem;
 use App\Models\Student;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use App\Services\IaeIntegrationService;
 use Illuminate\Support\Facades\Validator;
 use OpenApi\Attributes as OA;
@@ -350,56 +349,23 @@ class KrsController extends Controller
             'course_id' => 'required|integer'
         ]);
 
-        // Token JWT opsional untuk MVP (tetap didukung jika dikirimkan)
         $token = $request->bearerToken();
+        if (!$token) {
+            return response()->json(['message' => 'Token JWT tidak ditemukan'], 401);
+        }
 
         try {
-            // 1. Hubungi Service Data Mahasiswa (Hans) untuk verifikasi status Aktif
-            $mahasiswaUrl = rtrim(config('services.mahasiswa.url'), '/') . '/v1/students/' . $request->student_id;
-            
-            // Mengirim header X-IAE-KEY jika dibutuhkan oleh middleware
-            $studentResponse = Http::withHeaders([
-                'X-IAE-KEY' => config('services.iae.api_key')
-            ])->get($mahasiswaUrl);
-
-            if (!$studentResponse->successful()) {
-                throw new \Exception("Verifikasi Mahasiswa Gagal: " . ($studentResponse->json('message') ?? 'Service Mahasiswa tidak merespons.'));
-            }
-
-            $studentData = $studentResponse->json('data');
-            $statusMahasiswa = $studentData['status'] ?? ($studentData['student']['status'] ?? null);
-
-            if ($statusMahasiswa && strtolower($statusMahasiswa) !== 'aktif') {
-                throw new \Exception("Mahasiswa dengan NIM {$request->student_id} tidak aktif (Status: {$statusMahasiswa}).");
-            }
-
-            $course = Course::findOrFail($request->course_id);
-
-            // 2. Hubungi Service Nilai & Kurikulum (Manhal) untuk inisialisasi record nilai baru
-            $nilaiUrl = rtrim(config('services.nilai.url'), '/') . '/v1/grades/initialize';
-            $gradesResponse = Http::withHeaders([
-                'X-IAE-KEY' => 'KEY-MHS-310',
-                'Accept' => 'application/json'
-            ])->post($nilaiUrl, [
-                'student_id' => (string) $request->student_id,
-                'course_code' => (string) $course->code
-            ]);
-
-            if (!$gradesResponse->successful() && $gradesResponse->status() !== 201) {
-                throw new \Exception("Inisialisasi Nilai Gagal: " . ($gradesResponse->json('message') ?? 'Service Nilai tidak merespons.'));
-            }
-
-            // Mulai transaksi database lokal untuk mengunci kuota dan mencatat KRS
+            // Mulai transaksi database
             $krsItem = DB::transaction(function () use ($request, $integration, $token) {
                 
-                // 3. Ambil Course & kunci baris ini agar sisa_kuota aman dari race condition
+                // 1. Ambil Course & kunci baris ini agar sisa_kuota aman dari race condition
                 $course = Course::where('id', $request->course_id)->lockForUpdate()->firstOrFail();
                 
                 if ($course->remaining_quota < 1) {
-                    throw new \Exception("Kuota kelas penuh!");
+                    throw new \Exception("Kuota penuh!");
                 }
 
-                // 4. Kurangi kuota & simpan transaksi KRS lokal
+                // 2. Kurangi kuota & simpan transaksi
                 $course->decrement('remaining_quota');
                 
                 $item = KrsItem::create([
@@ -408,29 +374,25 @@ class KrsController extends Controller
                     'status' => 'submitted'
                 ]);
 
-                // 5. Integrasi Legacy (SOAP & RabbitMQ) tetap dipertahankan jika token JWT tersedia
-                if ($token) {
-                    $transactionData = [
-                        'student_id' => $item->student_id,
-                        'course_id' => $item->course_id,
-                        'status' => 'submitted'
-                    ];
-                    
-                    try {
-                        $integration->sendSoapAudit($token, $transactionData);
-                        $integration->publishEvent($token, $transactionData);
-                    } catch (\Exception $e) {
-                        // Log error tetapi jangan gagalkan transaksi utama jika legacy error di MVP
-                        logger()->error("Legacy Integration Error: " . $e->getMessage());
-                    }
-                }
+                $transactionData = [
+                    'student_id' => $item->student_id,
+                    'course_id' => $item->course_id,
+                    'status' => 'submitted'
+                ];
+
+                // 3. Panggil Legacy SOAP (Modul 2)
+                // Jika ini gagal, Exception akan dilempar dan database otomatis di-rollback
+                $integration->sendSoapAudit($token, $transactionData);
+                
+                // 4. Panggil AMQP Publisher untuk Service Kurikulum (Modul 3)
+                $integration->publishEvent($token, $transactionData);
 
                 return $item;
             });
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'KRS berhasil disubmit dan divalidasi end-to-end.',
+                'message' => 'KRS berhasil diajukan dan dicatat di sistem terpusat.',
                 'data' => $krsItem
             ], 201);
 

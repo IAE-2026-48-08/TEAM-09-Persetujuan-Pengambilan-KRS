@@ -41,13 +41,4 @@ return [
         'api_key' => env('IAE_KEY', '102022400068'),
     ],
 
-    'mahasiswa' => [
-        'url' => env('MAHASISWA_SERVICE_URL', 'http://mahasiswa-service/api'),
-    ],
-
-    'nilai' => [
-        'url' => env('NILAI_SERVICE_URL', 'http://nilai-service/api'),
-    ],
-
 ];
-

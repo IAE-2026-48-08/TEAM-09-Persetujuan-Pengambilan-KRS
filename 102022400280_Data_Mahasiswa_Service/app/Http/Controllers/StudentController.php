@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
+use App\Services\SSOService;
+use App\Services\SoapAuditService;
+use App\Services\RabbitMQService;
 
 #[OA\Tag(
     name: "Students",
@@ -18,17 +21,18 @@ class StudentController extends Controller
         tags: ["Students"],
         security: [["ApiKeyAuth" => []]],
         responses: [
-            new OA\Response(response: 200, description: "Success")
+            new OA\Response(
+                response: 200,
+                description: "Success"
+            )
         ]
     )]
     public function index()
     {
         return response()->json([
-            'status' => 'success',
-            'code' => 200,
-            'message' => 'List mahasiswa berhasil diambil',
+            'success' => true,
             'data' => Student::all()
-        ], 200);
+        ]);
     }
 
     #[OA\Get(
@@ -55,19 +59,15 @@ class StudentController extends Controller
 
         if (!$student) {
             return response()->json([
-                'status' => 'error',
-                'code' => 404,
-                'message' => 'Mahasiswa tidak ditemukan',
-                'data' => null
+                'success' => false,
+                'message' => 'Mahasiswa tidak ditemukan'
             ], 404);
         }
 
         return response()->json([
-            'status' => 'success',
-            'code' => 200,
-            'message' => 'Detail mahasiswa berhasil diambil',
+            'success' => true,
             'data' => $student
-        ], 200);
+        ]);
     }
 
     #[OA\Post(
@@ -94,65 +94,102 @@ class StudentController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: "Validation success"),
-            new OA\Response(response: 400, description: "Validation failed"),
-            new OA\Response(response: 404, description: "Student not found")
+            new OA\Response(
+                response: 200,
+                description: "Validation success"
+            ),
+            new OA\Response(
+                response: 404,
+                description: "Student not found"
+            )
         ]
     )]
     public function validateQuota(Request $request)
     {
-        $validated = $request->validate([
-            'student_id' => 'required',
+        $request->validate([
+            'student_id' => 'required|integer',
             'requested_sks' => 'required|integer|min:1'
         ]);
 
-        $student = Student::where('id', $validated['student_id'])->orWhere('nim', $validated['student_id'])->first();
+        $student = Student::find($request->student_id);
 
         if (!$student) {
             return response()->json([
-                'status' => 'error',
-                'code' => 404,
-                'message' => 'Mahasiswa tidak ditemukan',
-                'data' => null
+                'success' => false,
+                'message' => 'Mahasiswa tidak ditemukan'
             ], 404);
-        }
-
-        if ($student->status !== 'AKTIF') {
-            return response()->json([
-                'status' => 'error',
-                'code' => 400,
-                'message' => 'Mahasiswa tidak aktif',
-                'data' => null
-            ], 400);
         }
 
         $remaining = $student->quota_sks - $student->used_sks;
 
-        if ($validated['requested_sks'] > $remaining) {
-            return response()->json([
-                'status' => 'error',
-                'code' => 400,
-                'message' => 'Kuota SKS tidak mencukupi',
-                'data' => [
-                    'student_id' => $student->id,
-                    'remaining_quota' => $remaining,
-                    'requested_sks' => $validated['requested_sks'],
-                    'eligible' => false
+        $eligible = $request->requested_sks <= $remaining;
+
+        $auditData = [
+            "student_id" => $student->id,
+            "nim" => $student->nim,
+            "requested_sks" => $request->requested_sks,
+            "remaining_quota" => $remaining,
+            "eligible" => $eligible
+        ];
+
+        $soapStatus = "SUCCESS";
+        $rabbitStatus = "SUCCESS";
+
+        try {
+
+            $token = (new SSOService())->getToken();
+
+            (new SoapAuditService())->sendAudit(
+                $token,
+                $auditData
+            );
+
+            $rabbit = (new RabbitMQService())->publish(
+                $token,
+                [
+                    "message" => $auditData
                 ]
-            ], 400);
+            );
+
+            if (isset($rabbit['status'])) {
+                $rabbitStatus = $rabbit['status'];
+            }
+
+        } catch (\Exception $e) {
+
+            $soapStatus = "FAILED";
+            $rabbitStatus = "FAILED";
+
         }
 
         return response()->json([
-            'status' => 'success',
-            'code' => 200,
-            'message' => 'Kuota SKS cukup',
-            'data' => [
-                'student_id' => $student->id,
-                'remaining_quota' => $remaining,
-                'requested_sks' => $validated['requested_sks'],
-                'eligible' => true
+            "success" => true,
+
+            "data" => [
+                "student_id" => $student->id,
+                "remaining_quota" => $remaining,
+                "requested_sks" => $request->requested_sks,
+                "eligible" => $eligible
+            ],
+
+            "integration" => [
+                "soap" => $soapStatus,
+                "rabbitmq" => $rabbitStatus
             ]
-        ], 200);
+        ]);
+        try {
+
+    // seluruh kode SSO SOAP Rabbit
+
+} catch (\Throwable $e) {
+
+    return response()->json([
+        'error' => $e->getMessage(),
+        'line' => $e->getLine(),
+        'file' => $e->getFile()
+    ], 500);
+
+}
     }
 }
 

@@ -2,8 +2,9 @@
 
 ## Deskripsi
 
-Service ini adalah implementasi **mahasiswa-service** untuk MVP sistem KRS terpadu TEAM-09.
-Service ditujukan untuk menyediakan data mahasiswa dan validasi kuota SKS bagi service KRS.
+Project ini merupakan implementasi **Service Data Mahasiswa** menggunakan framework Laravel 12 sebagai bagian dari tugas mata kuliah Integrasi Aplikasi Enterprise.
+
+Service ini menyediakan REST API dan GraphQL untuk mengakses data mahasiswa serta melakukan validasi kuota SKS.
 
 ---
 
@@ -11,21 +12,14 @@ Service ditujukan untuk menyediakan data mahasiswa dan validasi kuota SKS bagi s
 
 * Laravel 12
 * PHP 8.2
-* SQLite
+* MySQL
 * L5-Swagger
-* REST API
+* Lighthouse GraphQL
+* Postman
 
 ---
 
-## Service Name dan Port
-
-- Docker service name: `mahasiswa-service`
-- Port host lokal: `8001`
-- Container port: `8000`
-
----
-
-## REST API Endpoints
+## REST API
 
 ### 1. Mengambil seluruh data mahasiswa
 
@@ -45,95 +39,85 @@ GET /api/v1/students/{id}
 POST /api/v1/students/validate-quota
 ```
 
-Body Request:
+Body Request
 
 ```json
 {
-  "student_id": 1,
-  "requested_sks": 4
+    "student_id": 1,
+    "requested_sks": 4
 }
 ```
 
-### 4. Header Autentikasi
-
-Semua endpoint menggunakan API Key header:
-
-```
-X-API-KEY: 1020224xxxxx-HANS
-```
-
 ---
 
-## Docker Compose
+## Authentication
 
-Gunakan `docker-compose up --build mahasiswa-service` untuk menjalankan service ini.
+Semua endpoint REST API menggunakan API Key.
 
-Service ini siap diintegrasikan ke monorepo TEAM-09 dengan nama service `mahasiswa-service`.
-
----
-
-## Menjalankan Secara Lokal
-
-1. Install dependency
+Header:
 
 ```
-composer install
+X-API-KEY: 102022400280-HANS
 ```
-
-2. Copy environment
-
-```
-cp .env.example .env
-```
-
-3. Buat file database SQLite
-
-```
-touch database/database.sqlite
-```
-
-4. Generate aplikasi key
-
-```
-php artisan key:generate
-```
-
-5. Jalankan migrasi dan seeder
-
-```
-php artisan migrate --seed
-```
-
-6. Jalankan service
-
-```
-php artisan serve --host=0.0.0.0 --port=8000
-```
-
-Service akan tersedia di `http://localhost:8001` jika dijalankan melalui Docker Compose.
-
----
-
-## Catatan Integrasi
-
-- Dalam monorepo, service ini harus diakses oleh KRS service menggunakan URL internal Docker:
-
-```
-http://mahasiswa-service:8000/api
-```
-
-- Jangan gunakan `localhost` saat service-to-service request dilakukan di dalam Docker network.
 
 ---
 
 ## Swagger Documentation
 
-Jika Swagger diaktifkan, dokumentasi dapat diakses melalui:
+Dokumentasi API dapat diakses melalui:
 
 ```
-http://localhost:8001/api/documentation
+http://127.0.0.1:8000/api/documentation
 ```
 
+---
+
+## GraphQL
+
+Endpoint:
+
+```
+POST /graphql
+```
+
+Contoh Query:
+
+```graphql
+query {
+  students {
+    id
+    nama
+    nim
+    status
+    quota_sks
+    used_sks
+  }
+}
+```
+
+---
+
+## Menjalankan Project
+
+Install dependency
+
+```
+composer install
+```
+
+Copy file environment
+
+```
+cp .env.example .env
+```
+
+Generate key
+
+```
+php artisan key:generate
+```
+
+Migrasi database
 
 ```
 php artisan migrate
