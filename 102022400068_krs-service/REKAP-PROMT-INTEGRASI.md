@@ -66,3 +66,36 @@ saya belum ada rabbitmq sih soalnya kemarin pun dibebankan ke server dosen
 apakah bisa jika rabbit mq implan di service data mahasiswa
 
 baiklah kita akan tembak  langsung ke endpoint http
+
+
+
+Rekap Sesi Prompting: Finalisasi & Audit Keamanan Arsitektur Microservices (TEAM-09)
+Dokumen ini mencatat interaksi dan penggunaan AI Assistant dalam tahap finalisasi Tugas Besar Integrasi Aplikasi Enterprise (IAE). Fokus utama pada sesi ini adalah pemenuhan rubrik penilaian, migrasi gateway, penambalan celah keamanan, dan penyusunan dokumentasi.
+
+1. Penyelesaian Dokumen Administratif
+Masalah: Mengidentifikasi kekurangan dokumen wajib untuk penilaian individu (33,33%) pada direktori krs-service.
+
+Prompt/Tindakan: Meminta AI membuat draf analisis_tugas_3.md yang berisi justifikasi state-changing pada proses pendaftaran KRS (menggunakan Pessimistic Locking) dan Sequence Diagram interaksi sistem dengan Tritunggal Pusat (SSO, SOAP, RabbitMQ).
+
+Hasil: Dokumen analisis_tugas_3.md berhasil ditambahkan. Selanjutnya, AI membantu menyusun draf RESUME_KONTRIBUSI.md dengan bahasa teknis yang kemudian disederhanakan agar lebih membumi dan aman saat sesi tanya-jawab dengan dosen penguji.
+
+2. Migrasi API Gateway (Sesuai Rubrik Institusi)
+Masalah: Terdeteksi adanya dua arsitektur gateway (Laravel dan Nginx). Penggunaan Laravel berisiko melanggar spesifikasi rubrik yang mewajibkan Nginx/Kong.
+
+Prompt/Tindakan: Menginstruksikan AI untuk bertindak sebagai Lead Systems Architect dan men- translate fitur keamanan dari Laravel ke Nginx (nginx.conf). Instruksi mencakup Anti-Header Stripping (meneruskan X-IAE-KEY, Authorization, dll), Timeout Prevention, dan CORS Handling.
+
+Hasil: Direktori 102022400068_api-gateway (Laravel) dihapus secara permanen. File docker-compose.yml diperbarui untuk mem-build Nginx dari folder api-gateway/ sebagai Single Point of Entry.
+
+3. Audit Keamanan Port (Anti-Bypass Gateway)
+Masalah: Pemeriksaan menemukan celah keamanan di mana layanan internal (krs-service di port 8001) masih terekspos ke mesin host, memungkinkan asisten lab melakukan bypass pada Nginx.
+
+Prompt/Tindakan: Meminta AI melakukan audit DevSecOps dengan aturan ketat: "Zero External Ports for Backend Services".
+
+Hasil: Blok ports: pada seluruh service internal dihapus dari docker-compose.yml. Kini hanya api-gateway yang terbuka di port eksternal (8000:80). Komunikasi antar-service murni terjadi di dalam team09_network.
+
+4. Audit Ketahanan Sistem & Pembuatan E2E Guide
+Masalah: Memastikan sistem tidak crash total (Cascading Failure) jika server pihak ketiga (SOAP/RabbitMQ dosen) down atau lambat merespons.
+
+Prompt/Tindakan: Menggunakan prompt audit "Principal Enterprise Architect" untuk memvalidasi penanganan exception dan penambahan batas waktu (timeout). Selain itu, meminta AI untuk men- generate urutan pengujian cURL untuk skenario End-to-End (Profil -> KRS -> Grades).
+
+Hasil: Sistem divalidasi dengan status Ready for Production. Panduan pengujian cURL lengkap dengan Sequence Diagram berhasil dirangkum dan diintegrasikan ke dalam halaman utama README.md
