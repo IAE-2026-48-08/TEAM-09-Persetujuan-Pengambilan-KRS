@@ -6,7 +6,7 @@ Dokumen ini mencatat detail kontribusi dari masing-masing anggota kelompok TEAM-
 ---
 
 ## 1. Muhammad Manhal Syarifudin
-**GitHub:** manhalsyarif | **NIM:** 102022400285
+**GitHub:** manhalsyarif | **NIM:** 102022400285 | **API Key:** `KEY-MHS-310`
 
 Berfokus pada pengembangan **Nilai dan Kurikulum Service** (`grades-service`).
 
@@ -29,7 +29,7 @@ Menyusun dokumen `analisis_tugas_3.md`, merancang sequence diagram sistem, dan m
 ---
 
 ## 2. D Hans Dhika Slamet
-**GitHub:** hansdhika11-dpk | **NIM:** 102022400280
+**GitHub:** hansdhika11-dpk | **NIM:** 102022400280 | **API Key:** `KEY-MHS-367`
 
 Berfokus pada pengembangan **Data Mahasiswa Service** (`mahasiswa-service`).
 
@@ -51,7 +51,7 @@ Memastikan ketersediaan resource mahasiswa agar dapat dikonsumsi (*lookup*) deng
 ---
 
 ## 3. Galih Hirpana
-GitHub: binjal1410 | NIM: 102022400068
+**GitHub:** binjal1410 | **NIM:** 102022400068 | **API Key:** `KEY-MHS-156`
 
 Berfokus pada pembuatan Mata Kuliah & KRS Service (krs-service), setup Docker Compose untuk kelompok, dan konfigurasi Nginx API Gateway.
 
@@ -83,8 +83,8 @@ Ringkasan kontribusi: Bertanggung jawab atas setup Docker dan Nginx Gateway kelo
 
 ## Ringkasan Keseluruhan
 
-| Kontributor | Jumlah Commit | Area Kontribusi |
-|---|---|---|
-| manhalsyarif | 9 | Grades Service, SOAP Audit, Dokumentasi |
-| hansdhika11-dpk | 1 | Data Mahasiswa Service, Endpoint Master Mahasiswa, API Security |
-| binjal1410 | 12 | KRS Service (DB Transaction/Locking), Nginx/Laravel API Gateway, Docker Compose, SSO JWT, SOAP XML Audit, RabbitMQ Integration |
+| Kontributor | NIM | API Key | Jumlah Commit | Area Kontribusi |
+|---|---|---|---|---|
+| **Muhammad Manhal Syarifudin** (manhalsyarif) | 102022400285 | `KEY-MHS-310` | 9 | Grades Service, SOAP Audit, Dokumentasi |
+| **D Hans Dhika Slamet** (hansdhika11-dpk) | 102022400280 | `KEY-MHS-367` | 1 | Data Mahasiswa Service, Endpoint Master Mahasiswa, API Security |
+| **Galih Hirpana** (binjal1410) | 102022400068 | `KEY-MHS-156` | 12 | KRS Service (DB Transaction/Locking), Nginx/Laravel API Gateway, Docker Compose, SSO JWT, SOAP XML Audit, RabbitMQ Integration |
