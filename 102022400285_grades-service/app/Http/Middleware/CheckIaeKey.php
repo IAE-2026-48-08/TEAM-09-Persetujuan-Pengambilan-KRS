@@ -9,7 +9,6 @@ class CheckIaeKey
 {
     public function handle(Request $request, Closure $next)
     {
-        // Ganti NIM kamu dengan string ketentuan tugas
         $keyKetentuan = 'KEY-MHS-310'; 
         
         if ($request->header('X-IAE-KEY') !== $keyKetentuan) {

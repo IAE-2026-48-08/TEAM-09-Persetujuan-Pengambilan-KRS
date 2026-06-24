@@ -18,9 +18,6 @@ Mengembangkan Service Nilai & Kurikulum (`102022400285_grades-service`) mengguna
 *   `GET /api/v1/grades/{student_id}` — menyajikan transkrip nilai mahasiswa berdasarkan NIM.
 *   `POST /api/v1/grades/initialize` *(Transaksi Kritis)* — inisialisasi baris data nilai baru mahasiswa.
 
-### Mekanisme Autentikasi
-Mengembangkan middleware `CheckIaeKey` (`iae.auth`) untuk memvalidasi API Key kelompok (`KEY-MHS-310`) dan pemetaan hak akses berbasis SSO.
-
 ### Integrasi SOAP Audit
 Mengembangkan `SoapAuditService` untuk mengirimkan log audit transaksi kritis dalam format XML ke SOAP server pusat, menangkap `<iae:ReceiptNumber>` menggunakan Regex, dan meng-update data ke database lokal.
 
